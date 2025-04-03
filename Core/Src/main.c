@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "control.h"
-#define MAX_speed 1000;
+#define MAX_speed 1000
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +68,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  int err = 0, integral = 0, prev_err = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,20 +99,29 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    int err;
-    int pid = kp * err + ki * integral + Kd * (err - prev_err);
 
-    // 差速控制计�?
+    integral += err;
+    if (integral > 100)
+      integral = 100;
+    else if (integral < -100)
+      integral = -100;
+    int pid = kp * err + ki * integral + kd * (err - prev_err);
+
+    // 差速控制计�?
     int left_speed = be_speed + pid;
     int right_speed = be_speed - pid;
+    if (left_speed > MAX_speed)
+      left_speed = MAX_speed;
+    else if (left_speed < -MAX_speed)
+      left_speed = -MAX_speed;
+    if (right_speed > MAX_speed)
+      right_speed = MAX_speed;
+    else if (right_speed < -MAX_speed)
+      right_speed = -MAX_speed;
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, left_speed);
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, right_speed);
 
-    Set_Motor_Speed(left_speed, right_speed);
-    int speed = kp;
-    // __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, a);
-    // __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, speed);
-    // __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, speed);
     prev_err = err;
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
