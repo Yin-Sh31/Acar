@@ -5,7 +5,7 @@
 #define ringt 0;    // 右转
 #define aright 0;   // 直角右转
 
-#define kp 3.0;  // 偏转灵敏�?
-#define ki 0.05; // 回调
-#define kd 0.2;  // 过偏抵消
-#define de_speed 60;
+#define kp 30;  // 偏转灵敏�?
+#define ki 0.5; // 回调
+#define kd 2;   // 过偏抵消
+#define be_speed 600;

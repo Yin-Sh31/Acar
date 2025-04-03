@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "control.h"
-#define MAX_speed 1000
+#define MAX_speed 1000;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +68,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  int
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,10 +99,19 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    int err;
+    int pid = kp * err + ki * integral + Kd * (err - prev_err);
+
+    // 差速控制计�?
+    int left_speed = be_speed + pid;
+    int right_speed = be_speed - pid;
+
+    Set_Motor_Speed(left_speed, right_speed);
     int speed = kp;
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, a);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, speed);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, speed);
+    // __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, a);
+    // __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, speed);
+    // __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, speed);
+    prev_err = err;
 
     /* USER CODE END WHILE */
 
@@ -168,7 +177,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 72 - 1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 100 - 1;
+  htim3.Init.Period = 1000 - 1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
