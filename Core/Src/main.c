@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "control.h"
-#include <stdint.h>
+#define MAX_speed 1000
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +68,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  int
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
