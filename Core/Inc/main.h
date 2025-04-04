@@ -67,6 +67,14 @@ void Error_Handler(void);
 #define mright_GPIO_Port GPIOA
 #define right_Pin GPIO_PIN_6
 #define right_GPIO_Port GPIOA
+#define Reset1_Pin GPIO_PIN_3
+#define Reset1_GPIO_Port GPIOB
+#define Right_Pin GPIO_PIN_4
+#define Right_GPIO_Port GPIOB
+#define Left_Pin GPIO_PIN_5
+#define Left_GPIO_Port GPIOB
+#define Reset2_Pin GPIO_PIN_6
+#define Reset2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

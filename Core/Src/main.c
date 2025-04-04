@@ -68,7 +68,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  int err = 0, integral = 0, prev_err = 0;
+  float err = 0.0, integral = 0.0, prev_err = 0.0;
+  int count = 0, sensors[4], sleep = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -98,35 +99,86 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
+  { // 视觉
+    if (sleep < 1)
+    {
+      sensors[0] = HAL_GPIO_ReadPin(left_GPIO_Port, left_Pin);
+      sensors[0] = HAL_GPIO_ReadPin(mleft_GPIO_Port, mleft_Pin);
+      sensors[0] = HAL_GPIO_ReadPin(mright_GPIO_Port, mright_Pin);
+      sensors[0] = HAL_GPIO_ReadPin(right_GPIO_Port, right_Pin);
+    }
+    else
+      sleep--;
 
-    integral += err;
-    if (integral > 100)
-      integral = 100;
-    else if (integral < -100)
-      integral = -100;
-    int pid = kp * err + ki * integral + kd * (err - prev_err);
-
-    // 差速控制计�?
-    int left_speed = be_speed + pid;
-    int right_speed = be_speed - pid;
-    if (left_speed > MAX_speed)
-      left_speed = MAX_speed;
-    else if (left_speed < -MAX_speed)
-      left_speed = -MAX_speed;
-    if (right_speed > MAX_speed)
-      right_speed = MAX_speed;
-    else if (right_speed < -MAX_speed)
-      right_speed = -MAX_speed;
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, left_speed);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, right_speed);
-
-    prev_err = err;
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+    if (sensors[0] == 0, sensors[0] == 0, sensors[2] == 0, sensors[3] == 0)
+    {
+      if (count < 3)
+      {
+        err = 0;
+        count++;
+        sleep = sl / 4;
+      }
+      else if (count = 3)
+      {
+        err = aleft;
+        count++;
+        sleep = sl;
+      }
+      else
+      {
+        for (int i = 20; i > 0; i--) // 刹车
+        {
+          HAL_GPIO_WritePin(Left_GPIO_Port, Left_Pin, GPIO_PIN_SET);
+          HAL_GPIO_WritePin(Right_GPIO_Port, Right_Pin, GPIO_PIN_SET);
+          __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, MAX_speed);
+          __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, MAX_speed);
+        }
+        return 0;
+      }
+    }
+    else if (sensors[0] == 0, sensors[1] == 0, sensors[2] == 1, sensors[3] == 1)
+      err = aleft;
+    else if (sensors[0] == 1, sensors[1] == 1, sensors[2] == 0, sensors[3] == 0)
+      err = aright;
+    else if (sensors[0] == 0, sensors[1] == 1, sensors[2] == 1, sensors[3] == 1)
+      err = left;
+    else if (sensors[0] == 1, sensors[1] == 0, sensors[2] == 1, sensors[3] == 1)
+      err = mleft;
+    else if (sensors[0] == 1, sensors[1] == 1, sensors[2] == 0, sensors[3] == 1)
+      err = mringt;
+    else if (sensors[0] == 1, sensors[1] == 1, sensors[2] == 1, sensors[3] == 0)
+      err = ringt;
+    else if (sensors[0] == 1, sensors[1] == 1, sensors[2] == 1, sensors[3] == 1)
+      err = 0;
   }
-  /* USER CODE END 3 */
+  // pid
+  integral += err;
+  if (integral > 100)
+    integral = 100;
+  else if (integral < -100)
+    integral = -100;
+
+  int pid = kp * err + ki * integral + kd * (err - prev_err);
+  prev_err = err;
+
+  // 驱动
+  int left_speed = be_speed + pid;
+  int right_speed = be_speed - pid;
+  if (left_speed > MAX_speed)
+    left_speed = MAX_speed;
+  else if (left_speed < -MAX_speed)
+    left_speed = -MAX_speed;
+  if (right_speed > MAX_speed)
+    right_speed = MAX_speed;
+  else if (right_speed < -MAX_speed)
+    right_speed = -MAX_speed;
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, left_speed);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, right_speed);
+  /* USER CODE END WHILE */
+
+  /* USER CODE BEGIN 3 */
+}
+/* USER CODE END 3 */
 }
 
 /**
@@ -141,10 +193,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
    * in the RCC_OscInitTypeDef structure.
    */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -153,12 +208,12 @@ void SystemClock_Config(void)
   /** Initializes the CPU, AHB and APB buses clocks
    */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -244,7 +299,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3 | GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Reset1_Pin | Reset2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : left_Pin mleft_Pin mright_Pin right_Pin */
   GPIO_InitStruct.Pin = left_Pin | mleft_Pin | mright_Pin | right_Pin;
@@ -252,8 +307,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_6;
+  /*Configure GPIO pins : Reset1_Pin Reset2_Pin */
+  GPIO_InitStruct.Pin = Reset1_Pin | Reset2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -265,12 +320,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-// PID计算
-//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, speed);
-//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, speed);
-// 数据采集
-// 驱动
-
 /* USER CODE END 4 */
 
 /**
