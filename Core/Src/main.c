@@ -111,7 +111,7 @@ int main(void)
     else
       sleep--;
 
-    if (sensors[0] == 0 && sensors[0] == 0 && sensors[2] == 0 && sensors[3] == 0)
+    if (sensors[0] == 1 && sensors[1] == 1 && sensors[2] == 1 && sensors[3] == 1)
     {
       if (count < 3)
       {
@@ -127,7 +127,7 @@ int main(void)
       }
       else
       {
-        for (int i = 20; i > 0; i--) // 刹车
+        for (int i = 100; i > 0; i--) // 刹车
         {
           HAL_GPIO_WritePin(Reset1_GPIO_Port, Reset1_Pin, GPIO_PIN_SET);
           HAL_GPIO_WritePin(Reset2_GPIO_Port, Reset2_Pin, GPIO_PIN_SET);
@@ -137,20 +137,22 @@ int main(void)
         return 0;
       }
     }
-    else if (sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 1 && sensors[3] == 1)
-      err = aleft;
     else if (sensors[0] == 1 && sensors[1] == 1 && sensors[2] == 0 && sensors[3] == 0)
+      err = aleft;
+    else if (sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 1 && sensors[3] == 1)
       err = aright;
-    else if (sensors[0] == 0 && sensors[1] == 1 && sensors[2] == 1 && sensors[3] == 1)
+    else if (sensors[0] == 1 && sensors[1] == 0 && sensors[2] == 0 && sensors[3] == 0)
       err = left;
-    else if (sensors[0] == 1 && sensors[1] == 0 && sensors[2] == 1 && sensors[3] == 1)
+    else if (sensors[0] == 0 && sensors[1] == 1 && sensors[2] == 0 && sensors[3] == 0)
       err = mleft;
-    else if (sensors[0] == 1 && sensors[1] == 1 && sensors[2] == 0 && sensors[3] == 1)
+    else if (sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 1 && sensors[3] == 0)
       err = mringt;
-    else if (sensors[0] == 1 && sensors[1] == 1 && sensors[2] == 1 && sensors[3] == 0)
+    else if (sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 0 && sensors[3] == 1)
       err = ringt;
-    else if (sensors[0] == 1 && sensors[1] == 1 && sensors[2] == 1 && sensors[3] == 1)
+    else if ((sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 0 && sensors[3] == 0)&& !(err < mleft || err > mringt))
       err = 0;
+    else
+    	err+=0.03;
 
     // pid
     integral += err;
@@ -173,6 +175,7 @@ int main(void)
       right_speed = MAX_speed;
     else if (right_speed < -MAX_speed)
       right_speed = -MAX_speed;
+
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, left_speed);
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, right_speed);
     HAL_Delay(cir);
