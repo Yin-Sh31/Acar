@@ -52,7 +52,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-
+void drive(int r, int l);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -69,7 +69,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   float err = 0.0, integral = 0.0, prev_err = 0.0;
-  int count = 0, sleep = 0;
+  int count = 0, sleep = 0, bac = 0;
   int sensors[4] = {0};
   /* USER CODE END 1 */
 
@@ -104,9 +104,9 @@ int main(void)
     if (sleep < 1)
     {
       sensors[0] = HAL_GPIO_ReadPin(left_GPIO_Port, left_Pin);
-      sensors[0] = HAL_GPIO_ReadPin(mleft_GPIO_Port, mleft_Pin);
-      sensors[0] = HAL_GPIO_ReadPin(mright_GPIO_Port, mright_Pin);
-      sensors[0] = HAL_GPIO_ReadPin(right_GPIO_Port, right_Pin);
+      sensors[1] = HAL_GPIO_ReadPin(mleft_GPIO_Port, mleft_Pin);
+      sensors[2] = HAL_GPIO_ReadPin(mright_GPIO_Port, mright_Pin);
+      sensors[3] = HAL_GPIO_ReadPin(right_GPIO_Port, right_Pin);
     }
     else
       sleep--;
@@ -125,17 +125,17 @@ int main(void)
         count++;
         sleep = sl;
       }
-      else
-      {
-        for (int i = 100; i > 0; i--) // 刹车
-        {
-          HAL_GPIO_WritePin(Reset1_GPIO_Port, Reset1_Pin, GPIO_PIN_SET);
-          HAL_GPIO_WritePin(Reset2_GPIO_Port, Reset2_Pin, GPIO_PIN_SET);
-          __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, MAX_speed);
-          __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, MAX_speed);
-        }
-        return 0;
-      }
+      // else
+      // {
+      //   for (int i = 100; i > 0; i--) // 刹车
+      //   {
+      //     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, MAX_speed);
+      //     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, MAX_speed);
+      //     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, MAX_speed);
+      //     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, MAX_speed);
+      //   }
+      //   return 0;
+      // }
     }
     else if (sensors[0] == 1 && sensors[1] == 1 && sensors[2] == 0 && sensors[3] == 0)
       err = aleft;
@@ -149,10 +149,10 @@ int main(void)
       err = mringt;
     else if (sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 0 && sensors[3] == 1)
       err = ringt;
-    else if ((sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 0 && sensors[3] == 0)&& !(err < mleft || err > mringt))
+    else if ((sensors[0] == 0 && sensors[1] == 0 && sensors[2] == 0 && sensors[3] == 0) && !(err < mleft || err > mringt))
       err = 0;
-    else
-    	err+=0.03;
+    //    else
+    //      bac = 1;
 
     // pid
     integral += err;
@@ -165,8 +165,19 @@ int main(void)
     prev_err = err;
 
     // 驱动
-    int left_speed = be_speed + pid;
-    int right_speed = be_speed - pid;
+    int left_speed;
+    int right_speed;
+    if (bac == 1)
+    {
+      left_speed = -be_speed;
+      right_speed = -be_speed;
+      bac = 0;
+    }
+    else
+    {
+      left_speed = be_speed - pid;
+      right_speed = be_speed + pid - cc;
+    }
     if (left_speed > MAX_speed)
       left_speed = MAX_speed;
     else if (left_speed < -MAX_speed)
@@ -176,9 +187,29 @@ int main(void)
     else if (right_speed < -MAX_speed)
       right_speed = -MAX_speed;
 
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, left_speed);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, right_speed);
-    HAL_Delay(cir);
+    if (left_speed >= 0)
+    {
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, left_speed);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+    }
+    else
+    {
+      left_speed = -left_speed;
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, left_speed);
+    }
+    if (left_speed >= 0)
+    {
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, right_speed);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
+    }
+    else
+    {
+      right_speed = -right_speed;
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, right_speed);
+    }
+    //    HAL_Delay(cir);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -325,6 +356,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void drive(int r, int l);
+{
+}
 /* USER CODE END 4 */
 
 /**
